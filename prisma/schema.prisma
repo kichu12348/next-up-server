@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}
+
+model Participant {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  college     String?
+  otp         String?
+  otpExpiry   DateTime?
+  submissions Submission[]
+  totalPoints Int          @default(0)
+  taskCount   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("participants")
+}
+
+model Submission {
+  id            String           @id @default(uuid())
+  taskName      String
+  taskType      TaskType
+  fileUrl       String
+  status        SubmissionStatus @default(PENDING)
+  points        Int?
+  note          String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  participant   Participant      @relation(fields: [participantId], references: [id])
+  participantId String
+
+  @@map("submissions")
+}
+
+model Admin {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  otp       String?
+  otpExpiry DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("admins")
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  type            TaskType
+  points          Int
+  isVariablePoints Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("tasks")
+}
+
+enum TaskType {
+  CHALLENGE
+  MENTOR_SESSION
+  SUBJECTIVE_CHALLENGE
+  EASTER_EGG
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
