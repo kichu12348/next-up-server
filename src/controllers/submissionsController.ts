@@ -5,18 +5,6 @@ import { sendSubmissionApprovedEmail, sendSubmissionRejectedEmail } from '../ser
 import { emitLeaderboardUpdate, emitSubmissionUpdate, emitUserStatsUpdate } from '../sockets/socketHandlers';
 import { AuthRequest, ParticipantAuthRequest } from '../middleware/auth';
 
-interface Submission {
-  id: string;
-  taskName: string;
-  taskType: string;
-  fileUrl: string;
-  status: string;
-  createdAt: Date;
-  participantId: string;
-  points?: number;
-  note?: string;
-}
-
 export const createSubmission = async (req: ParticipantAuthRequest, res: Response): Promise<void> => {
   try {
     const { taskType, taskName, fileUrl } = req.body;
@@ -186,9 +174,35 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
     ]);
 
     // Get task information for each submission
-    const submissionsWithTasks = await Promise.all(
-      submissions.map(async (submission: Submission) => {
-        const task = await prisma.task.findFirst({
+    interface TaskInfo {
+      id: string;
+      name: string;
+      type: string;
+      points: number;
+      isVariablePoints: boolean;
+    }
+
+    interface SubmissionWithTask {
+      id: string;
+      taskName: string;
+      taskType: string;
+      fileUrl: string;
+      status: string;
+      createdAt: Date;
+      updatedAt: Date;
+      points: number | null;
+      note: string | null;
+      participantId: string;
+      participant: {
+        name: string;
+        email: string;
+      };
+      task: TaskInfo | null;
+    }
+
+    const submissionsWithTasks: SubmissionWithTask[] = await Promise.all(
+      submissions.map(async (submission: typeof submissions[0]): Promise<SubmissionWithTask> => {
+        const task: TaskInfo | null = await prisma.task.findFirst({
           where: { 
             name: submission.taskName,
             type: submission.taskType 

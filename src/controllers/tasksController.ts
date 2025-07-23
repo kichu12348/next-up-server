@@ -154,8 +154,22 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<vo
       })
     ]);
 
-    const totalSubmissions = submissionStats.reduce((acc: number, stat: { _count: { status: number } }) => acc + stat._count.status, 0);
-    const pendingSubmissions = submissionStats.find((stat: { status: string }) => stat.status === 'PENDING')?._count.status || 0;
+    interface SubmissionGroupStats {
+      status: string;
+      _count: {
+        status: number;
+      };
+    }
+
+    const totalSubmissions = submissionStats.reduce((acc: number, stat: SubmissionGroupStats) => acc + stat._count.status, 0);
+    interface SubmissionStatusCount {
+      status: string;
+      _count: {
+        status: number;
+      };
+    }
+
+    const pendingSubmissions = submissionStats.find((stat: SubmissionStatusCount) => stat.status === 'PENDING')?._count.status || 0;
 
     res.status(200).json({
       totalTasks: taskCount,
