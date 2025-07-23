@@ -5,6 +5,18 @@ import { sendSubmissionApprovedEmail, sendSubmissionRejectedEmail } from '../ser
 import { emitLeaderboardUpdate, emitSubmissionUpdate, emitUserStatsUpdate } from '../sockets/socketHandlers';
 import { AuthRequest, ParticipantAuthRequest } from '../middleware/auth';
 
+interface Submission {
+  id: string;
+  taskName: string;
+  taskType: string;
+  fileUrl: string;
+  status: string;
+  createdAt: Date;
+  participantId: string;
+  points?: number;
+  note?: string;
+}
+
 export const createSubmission = async (req: ParticipantAuthRequest, res: Response): Promise<void> => {
   try {
     const { taskType, taskName, fileUrl } = req.body;
@@ -175,7 +187,7 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
 
     // Get task information for each submission
     const submissionsWithTasks = await Promise.all(
-      submissions.map(async (submission) => {
+      submissions.map(async (submission: Submission) => {
         const task = await prisma.task.findFirst({
           where: { 
             name: submission.taskName,

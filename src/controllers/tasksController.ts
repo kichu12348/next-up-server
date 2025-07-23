@@ -154,8 +154,8 @@ export const getAdminStats = async (req: AuthRequest, res: Response): Promise<vo
       })
     ]);
 
-    const totalSubmissions = submissionStats.reduce((acc, stat) => acc + stat._count.status, 0);
-    const pendingSubmissions = submissionStats.find(stat => stat.status === 'PENDING')?._count.status || 0;
+    const totalSubmissions = submissionStats.reduce((acc: number, stat: { _count: { status: number } }) => acc + stat._count.status, 0);
+    const pendingSubmissions = submissionStats.find((stat: { status: string }) => stat.status === 'PENDING')?._count.status || 0;
 
     res.status(200).json({
       totalTasks: taskCount,
