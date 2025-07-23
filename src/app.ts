@@ -61,7 +61,7 @@ app.use('/api/submissions', rateLimit({
 }));
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_, res: express.Response) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
@@ -92,7 +92,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.get("/", (req, res) => {
+app.get("/", (_, res: express.Response) => {
   res.status(200).json({ message: "Welcome to the NextUp API" });
 });
 
