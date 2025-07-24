@@ -162,6 +162,7 @@ interface Participant {
   name: string;
   email: string;
   college: string | null;
+  gender: string | null;
 }
 
 export const exportExcel = async (
@@ -170,7 +171,13 @@ export const exportExcel = async (
 ): Promise<void> => {
   try {
     const participants = await prisma.participant.findMany({
-      select: { name: true, email: true, college: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        college: true,
+        gender: true,
+      },
       orderBy: [{ name: "asc" }],
     });
 
@@ -187,6 +194,7 @@ export const exportExcel = async (
     };
 
     worksheet.columns = [
+      { header: "ID", key: "id", width: 5 },
       { header: "Name", key: "name", width: findMaxLengthOfColumn("name") + 2 },
       {
         header: "Email",
@@ -198,14 +206,21 @@ export const exportExcel = async (
         key: "college",
         width: findMaxLengthOfColumn("college") + 2,
       },
+      {
+        header: "Gender",
+        key: "gender",
+        width: findMaxLengthOfColumn("gender") + 2,
+      },
     ];
 
     worksheet.getRow(1).font = { bold: true };
     worksheet.autoFilter = "A1:C1";
 
-    participants.forEach((p) => {
+    participants.forEach((p, index: number) => {
       worksheet.addRow({
+        id: index + 1,
         name: p.name?.trim() || "N/A",
+        gender: p.gender?.trim() || "N/A",
         email: p.email?.trim() || "N/A",
         college: p.college?.trim() || "N/A",
       });

@@ -15,6 +15,7 @@ model Participant {
   name        String
   email       String       @unique
   college     String?
+  gender      String? 
   otp         String?
   otpExpiry   DateTime?
   submissions Submission[]

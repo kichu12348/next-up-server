@@ -1,18 +1,25 @@
-import { Request, Response } from 'express';
-import prisma from '../utils/db';
-import { generateOTP, isOTPExpired, generateToken } from '../utils/auth';
-import { OTPRequestSchema, OTPVerifySchema, ParticipantOTPRequestSchema } from '../utils/validation';
-import { sendParticipantOTPEmail } from '../services/emailService';
+import { Request, Response } from "express";
+import prisma from "../utils/db";
+import { generateOTP, isOTPExpired, generateToken } from "../utils/auth";
+import {
+  OTPRequestSchema,
+  OTPVerifySchema,
+  ParticipantOTPRequestSchema,
+} from "../utils/validation";
+import { sendParticipantOTPEmail } from "../services/emailService";
 
 // Map to store timeout IDs for OTP cleanup
 const otpTimeouts = new Map<string, NodeJS.Timeout>();
 
-export const requestParticipantOTP = async (req: Request, res: Response): Promise<void> => {
+export const requestParticipantOTP = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const { email, name, college } = req.body;
-    
+    const { email, name, college, gender } = req.body;
+
     if (!email) {
-      res.status(400).json({ error: 'Email is required' });
+      res.status(400).json({ error: "Email is required" });
       return;
     }
 
@@ -26,24 +33,25 @@ export const requestParticipantOTP = async (req: Request, res: Response): Promis
     // If new user, name and college are required
     if (!existingParticipant) {
       if (!name || !college) {
-        res.status(400).json({ 
-          error: 'Name and college are required for new users',
-          isNewUser: true 
+        res.status(400).json({
+          error: "Name and college are required for new users",
+          isNewUser: true,
         });
         return;
       }
-      
+
       // Validate the input for new users
       const validationResult = ParticipantOTPRequestSchema.safeParse({
         email: normalizedEmail,
         name: name.trim(),
-        college: college.trim()
+        college: college.trim(),
+        gender: gender?.trim(),
       });
-      
+
       if (!validationResult.success) {
-        res.status(400).json({ 
-          error: 'Invalid input data',
-          details: validationResult.error.issues 
+        res.status(400).json({
+          error: "Invalid input data",
+          details: validationResult.error.issues,
         });
         return;
       }
@@ -69,6 +77,7 @@ export const requestParticipantOTP = async (req: Request, res: Response): Promis
           email: normalizedEmail,
           name: name.trim(),
           college: college.trim(),
+          gender: gender?.trim(),
           otp,
           otpExpiry,
         },
@@ -100,7 +109,10 @@ export const requestParticipantOTP = async (req: Request, res: Response): Promis
         // Remove timeout from map
         otpTimeouts.delete(normalizedEmail);
       } catch (error) {
-        console.error(`Error cleaning up participant ${normalizedEmail}:`, error);
+        console.error(
+          `Error cleaning up participant ${normalizedEmail}:`,
+          error
+        );
         otpTimeouts.delete(normalizedEmail);
       }
     }, 5 * 60 * 1000); // 5 minutes
@@ -112,23 +124,26 @@ export const requestParticipantOTP = async (req: Request, res: Response): Promis
     await sendParticipantOTPEmail(normalizedEmail, otp);
 
     res.status(200).json({
-      message: 'OTP sent successfully',
+      message: "OTP sent successfully",
       email: normalizedEmail,
       isNewUser: !existingParticipant,
     });
   } catch (error) {
-    console.error('Request participant OTP error:', error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
-      res.status(400).json({ error: 'Invalid input data' });
+    console.error("Request participant OTP error:", error);
+
+    if (error instanceof Error && error.name === "ZodError") {
+      res.status(400).json({ error: "Invalid input data" });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to send OTP' });
+    res.status(500).json({ error: "Failed to send OTP" });
   }
 };
 
-export const verifyParticipantOTP = async (req: Request, res: Response): Promise<void> => {
+export const verifyParticipantOTP = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { email, otp } = OTPVerifySchema.parse(req.body);
     const normalizedEmail = email.trim().toLowerCase();
@@ -142,13 +157,13 @@ export const verifyParticipantOTP = async (req: Request, res: Response): Promise
     });
 
     if (!participant) {
-      res.status(401).json({ error: 'Invalid email or OTP' });
+      res.status(401).json({ error: "Invalid email or OTP" });
       return;
     }
 
     // Check if OTP is expired
     if (isOTPExpired(participant.otpExpiry)) {
-      res.status(401).json({ error: 'OTP has expired' });
+      res.status(401).json({ error: "OTP has expired" });
       return;
     }
 
@@ -175,7 +190,7 @@ export const verifyParticipantOTP = async (req: Request, res: Response): Promise
     });
 
     res.status(200).json({
-      message: 'OTP verified successfully',
+      message: "OTP verified successfully",
       token,
       participant: {
         id: participant.id,
@@ -187,14 +202,14 @@ export const verifyParticipantOTP = async (req: Request, res: Response): Promise
       },
     });
   } catch (error) {
-    console.error('Verify participant OTP error:', error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
-      res.status(400).json({ error: 'Invalid input data' });
+    console.error("Verify participant OTP error:", error);
+
+    if (error instanceof Error && error.name === "ZodError") {
+      res.status(400).json({ error: "Invalid input data" });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to verify OTP' });
+    res.status(500).json({ error: "Failed to verify OTP" });
   }
 };
 

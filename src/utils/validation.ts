@@ -8,7 +8,7 @@ export const SubmissionCreateSchema = z.object({
   email: z.email('Invalid email format'),
   taskType: TaskType,
   taskName: z.string().min(1, 'Task name is required').max(200, 'Task name too long'),
-  fileUrl: z.string().url('Invalid URL format'),
+  fileUrl: z.url('Invalid URL format'),
 });
 
 export const SubmissionUpdateSchema = z.object({
@@ -25,6 +25,7 @@ export const ParticipantOTPRequestSchema = z.object({
   email: z.email('Invalid email format'),
   name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
   college: z.string().min(1, 'College is required').max(200, 'College name too long').optional(),
+  gender: z.enum(['Male', 'Female']).optional(),
 });
 
 export const OTPVerifySchema = z.object({
