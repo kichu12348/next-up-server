@@ -211,8 +211,14 @@ export const exportExcel = async (
       });
     });
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="participants.xlsx"');
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="participants.xlsx"'
+    );
 
     // ✅ Pipe workbook to response stream
     await workbook.xlsx.write(res);
@@ -220,5 +226,25 @@ export const exportExcel = async (
   } catch (error) {
     console.error("Export Excel error:", error);
     res.status(500).json({ error: "Failed to export participants to Excel" });
+  }
+};
+
+export const getParticipants = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const participants = await prisma.participant.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        college: true,
+      },
+    });
+    res.status(200).json(participants);
+  } catch (error) {
+    console.error("Get users error:", error);
+    res.status(500).json({ error: "Failed to get users" });
   }
 };
