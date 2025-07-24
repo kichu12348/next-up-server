@@ -197,6 +197,11 @@ export const exportExcel = async (
       { header: "ID", key: "id", width: 5 },
       { header: "Name", key: "name", width: findMaxLengthOfColumn("name") + 2 },
       {
+        header: "Gender",
+        key: "gender",
+        width: findMaxLengthOfColumn("gender") + 2,
+      },
+      {
         header: "Email",
         key: "email",
         width: findMaxLengthOfColumn("email") + 2,
@@ -205,11 +210,6 @@ export const exportExcel = async (
         header: "College",
         key: "college",
         width: findMaxLengthOfColumn("college") + 2,
-      },
-      {
-        header: "Gender",
-        key: "gender",
-        width: findMaxLengthOfColumn("gender") + 2,
       },
     ];
 
