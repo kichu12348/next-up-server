@@ -45,10 +45,10 @@ export const sendOTPEmail = async (to: string, otp: string): Promise<void> => {
 };
 
 export const sendParticipantOTPEmail = async (to: string, otp: string): Promise<void> => {
-  const subject = '🔐 Your NextUp Login Code';
+  const subject = '🔐 Your Beginner\'s League Login Code';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333; text-align: center;">NextUp Login Code</h2>
+      <h2 style="color: #333; text-align: center;">Beginner's League Login Code</h2>
       <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
         <h1 style="color: #007bff; font-size: 2.5em; margin: 0; letter-spacing: 0.2em;">${otp}</h1>
       </div>

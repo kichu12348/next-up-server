@@ -71,7 +71,7 @@ app.get('/health', (_, res: express.Response) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    service: 'NextUp Backend'
+    service: 'Beginner\'s League Backend'
   });
 });
 
@@ -99,7 +99,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 app.get("/", (_, res: express.Response) => {
-  res.status(200).json({ message: "Welcome to the NextUp API" });
+  res.status(200).json({ message: "Welcome to the Beginner's League API" });
 });
 
 // 404 handler
