@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const FROM_EMAIL = process.env.SENDING_EMAIL || 'no-reply@example.com';
+const FROM_EMAIL = process.env.SENDING_EMAIL || 'no-reply@kichu.space';
 
 export interface EmailOptions {
   to: string;
