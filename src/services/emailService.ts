@@ -1,7 +1,15 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-// Initialize SendGrid
-sgMail.setApiKey(process.env.SEND_GRID_API_KEY || '');
+// --- Nodemailer Transporter Setup ---
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT || 587),
+  secure: process.env.EMAIL_PORT === '465', 
+  auth: {
+    user: process.env.EMAIL_USER, 
+    pass: process.env.EMAIL_PASS, 
+  },
+});
 
 const FROM_EMAIL = process.env.SENDING_EMAIL || 'no-reply@example.com';
 
@@ -13,20 +21,22 @@ export interface EmailOptions {
 
 export const sendEmail = async (options: EmailOptions): Promise<void> => {
   try {
-    const msg = {
+    const mailOptions = {
       to: options.to,
-      from: FROM_EMAIL,
+      from: `Beginner's League <${FROM_EMAIL}>`,
       subject: options.subject,
       html: options.html,
     };
 
-    await sgMail.send(msg);
-    console.log(`Email sent successfully to ${options.to}`);
+    const info = await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error('Email sending failed:', error);
     throw new Error('Failed to send email');
   }
 };
+
+
+// --- The rest of your functions remain unchanged ---
 
 export const sendOTPEmail = async (to: string, otp: string): Promise<void> => {
   const subject = '🔐 Your Admin Login OTP';
