@@ -9,7 +9,6 @@ async function main() {
   const adminEmails = [
     "rmahadevan574@gmail.com","aaminas402@gmail.com","iedclbsitw@gmail.com"
   ];
-
   for (const email of adminEmails) {
     try {
       await prisma.admin.upsert({
