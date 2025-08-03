@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const TaskType = z.enum(['CHALLENGE', 'MENTOR_SESSION', 'SUBJECTIVE_CHALLENGE', 'EASTER_EGG']);
+export const TaskType = z.enum(['CHALLENGE', 'MENTOR_SESSION', 'POWERUP_CHALLENGE', 'EASTER_EGG']);
 export const SubmissionStatus = z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 
 export const SubmissionCreateSchema = z.object({

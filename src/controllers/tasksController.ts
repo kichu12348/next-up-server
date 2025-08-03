@@ -5,7 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 export interface TaskData {
   name: string;
   description: string;
-  type: 'CHALLENGE' | 'MENTOR_SESSION' | 'SUBJECTIVE_CHALLENGE' | 'EASTER_EGG';
+  type: 'CHALLENGE' | 'MENTOR_SESSION' | 'POWERUP_CHALLENGE' | 'EASTER_EGG';
   points: number;
   isVariablePoints: boolean;
 }
