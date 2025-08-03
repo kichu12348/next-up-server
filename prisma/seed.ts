@@ -7,7 +7,7 @@ async function main() {
 
   // Create preset admin accounts
   const adminEmails = [
-    "rmahadevan574@gmail.com"
+    "rmahadevan574@gmail.com","aaminas402@gmail.com","iedclbsitw@gmail.com"
   ];
 
   for (const email of adminEmails) {
