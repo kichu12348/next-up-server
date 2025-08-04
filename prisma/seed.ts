@@ -1,13 +1,21 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding database...');
+  console.log("Seeding database...");
 
   // Create preset admin accounts
   const adminEmails = [
-    "rmahadevan574@gmail.com","aaminas402@gmail.com","iedclbsitw@gmail.com"
+    "rmahadevan574@gmail.com",
+    "aaminas402@gmail.com",
+    "iedclbsitw@gmail.com",
+    "iedcgecbh@gmail.com",
+    "iedc@lbscek.ac.in",
+    "iedc@sctce.ac.in",
+    "Iedc_bootcamp@ceconline.edu",
+    "iedc@cev.ac.in",
+    "Iedc@sngce.ac.in"
   ];
   for (const email of adminEmails) {
     try {
@@ -24,12 +32,12 @@ async function main() {
     }
   }
 
-  console.log('Seeding completed!');
+  console.log("Seeding completed!");
 }
 
 main()
   .catch((e) => {
-    console.error('Error during seeding:', e);
+    console.error("Error during seeding:", e);
     process.exit(1);
   })
   .finally(async () => {
