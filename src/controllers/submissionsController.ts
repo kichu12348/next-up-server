@@ -1,16 +1,30 @@
-import { Request, Response } from 'express';
-import prisma from '../utils/db';
-import { SubmissionCreateSchema, SubmissionUpdateSchema, SubmissionsQuerySchema } from '../utils/validation';
-import { sendSubmissionApprovedEmail, sendSubmissionRejectedEmail } from '../services/emailService';
-import { emitLeaderboardUpdate, emitSubmissionUpdate, emitUserStatsUpdate } from '../sockets/socketHandlers';
-import { AuthRequest, ParticipantAuthRequest } from '../middleware/auth';
+import { Request, Response } from "express";
+import prisma from "../utils/db";
+import {
+  SubmissionCreateSchema,
+  SubmissionUpdateSchema,
+  SubmissionsQuerySchema,
+} from "../utils/validation";
+import {
+  sendSubmissionApprovedEmail,
+  sendSubmissionRejectedEmail,
+} from "../services/emailService";
+import {
+  emitLeaderboardUpdate,
+  emitSubmissionUpdate,
+  emitUserStatsUpdate,
+} from "../sockets/socketHandlers";
+import { AuthRequest, ParticipantAuthRequest } from "../middleware/auth";
 
-export const createSubmission = async (req: ParticipantAuthRequest, res: Response): Promise<void> => {
+export const createSubmission = async (
+  req: ParticipantAuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { taskType, taskName, fileUrl } = req.body;
 
     if (!req.participant?.participantId) {
-      res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: "Authentication required" });
       return;
     }
 
@@ -20,7 +34,7 @@ export const createSubmission = async (req: ParticipantAuthRequest, res: Respons
     });
 
     if (!participant) {
-      res.status(401).json({ error: 'Participant not found' });
+      res.status(401).json({ error: "Participant not found" });
       return;
     }
 
@@ -32,12 +46,46 @@ export const createSubmission = async (req: ParticipantAuthRequest, res: Respons
       },
     });
 
-    if (existingSubmission) {
-      res.status(400).json({ error: 'Submission already exists for this task' });
+    if (existingSubmission && existingSubmission.status !== "REJECTED") {
+      res
+        .status(400)
+        .json({
+          error:
+            "A submission for this task already exists and is not rejected.",
+        });
       return;
     }
 
-    // Create submission
+    if (existingSubmission && existingSubmission.status === "REJECTED") {
+      const updatedSubmission = await prisma.submission.update({
+        where: { id: existingSubmission.id },
+        data: {
+          fileUrl,
+          status: "PENDING", 
+          note: null,
+          points: null,
+        },
+        include: {
+          participant: {
+            select: { name: true, email: true },
+          },
+        },
+      });
+      await prisma.participant.update({
+        where: { id: participant.id },
+        data: {
+          taskCount: {
+            increment: 1,
+          },
+        },
+      });
+      emitSubmissionUpdate(updatedSubmission);
+      res.status(200).json({
+        message: "Submission updated successfully",
+        submission: updatedSubmission,
+      });
+      return;
+    }
     const submission = await prisma.submission.create({
       data: {
         taskName,
@@ -55,7 +103,6 @@ export const createSubmission = async (req: ParticipantAuthRequest, res: Respons
       },
     });
 
-    // Increment task count when submission is created
     await prisma.participant.update({
       where: { id: participant.id },
       data: {
@@ -64,12 +111,10 @@ export const createSubmission = async (req: ParticipantAuthRequest, res: Respons
         },
       },
     });
-
-    // Emit submission update
     emitSubmissionUpdate(submission);
 
     res.status(201).json({
-      message: 'Submission created successfully',
+      message: "Submission created successfully",
       submission: {
         id: submission.id,
         taskName: submission.taskName,
@@ -81,21 +126,24 @@ export const createSubmission = async (req: ParticipantAuthRequest, res: Respons
       },
     });
   } catch (error) {
-    console.error('Create submission error:', error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
-      res.status(400).json({ error: 'Invalid input data' });
+    console.error("Create submission error:", error);
+
+    if (error instanceof Error && error.name === "ZodError") {
+      res.status(400).json({ error: "Invalid input data" });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to create submission' });
+    res.status(500).json({ error: "Failed to create submission" });
   }
 };
 
-export const getSubmissionsByParticipant = async (req: ParticipantAuthRequest, res: Response): Promise<void> => {
+export const getSubmissionsByParticipant = async (
+  req: ParticipantAuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     if (!req.participant?.participantId) {
-      res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: "Authentication required" });
       return;
     }
 
@@ -104,14 +152,14 @@ export const getSubmissionsByParticipant = async (req: ParticipantAuthRequest, r
       include: {
         submissions: {
           orderBy: {
-            createdAt: 'desc',
+            createdAt: "desc",
           },
         },
       },
     });
 
     if (!participant) {
-      res.status(404).json({ error: 'Participant not found' });
+      res.status(404).json({ error: "Participant not found" });
       return;
     }
 
@@ -125,12 +173,15 @@ export const getSubmissionsByParticipant = async (req: ParticipantAuthRequest, r
       submissions: participant.submissions,
     });
   } catch (error) {
-    console.error('Get submissions error:', error);
-    res.status(500).json({ error: 'Failed to fetch submissions' });
+    console.error("Get submissions error:", error);
+    res.status(500).json({ error: "Failed to fetch submissions" });
   }
 };
 
-export const getAdminSubmissions = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getAdminSubmissions = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const queryData = SubmissionsQuerySchema.parse(req.query);
     const page = parseInt(queryData.page);
@@ -138,15 +189,15 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    
+
     if (queryData.status) {
       where.status = queryData.status;
     }
-    
+
     if (queryData.taskType) {
       where.taskType = queryData.taskType;
     }
-    
+
     if (queryData.email) {
       where.participant = {
         email: queryData.email,
@@ -165,7 +216,7 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
           },
         },
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
         skip,
         take: limit,
@@ -201,26 +252,30 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
     }
 
     const submissionsWithTasks: SubmissionWithTask[] = await Promise.all(
-      submissions.map(async (submission: typeof submissions[0]): Promise<SubmissionWithTask> => {
-        const task: TaskInfo | null = await prisma.task.findFirst({
-          where: { 
-            name: submission.taskName,
-            type: submission.taskType 
-          },
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            points: true,
-            isVariablePoints: true,
-          },
-        });
+      submissions.map(
+        async (
+          submission: (typeof submissions)[0]
+        ): Promise<SubmissionWithTask> => {
+          const task: TaskInfo | null = await prisma.task.findFirst({
+            where: {
+              name: submission.taskName,
+              type: submission.taskType,
+            },
+            select: {
+              id: true,
+              name: true,
+              type: true,
+              points: true,
+              isVariablePoints: true,
+            },
+          });
 
-        return {
-          ...submission,
-          task: task || null,
-        };
-      })
+          return {
+            ...submission,
+            task: task || null,
+          };
+        }
+      )
     );
 
     res.status(200).json({
@@ -233,12 +288,15 @@ export const getAdminSubmissions = async (req: AuthRequest, res: Response): Prom
       },
     });
   } catch (error) {
-    console.error('Get admin submissions error:', error);
-    res.status(500).json({ error: 'Failed to fetch submissions' });
+    console.error("Get admin submissions error:", error);
+    res.status(500).json({ error: "Failed to fetch submissions" });
   }
 };
 
-export const updateSubmission = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateSubmission = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
     const updateData = SubmissionUpdateSchema.parse(req.body);
@@ -252,7 +310,7 @@ export const updateSubmission = async (req: AuthRequest, res: Response): Promise
     });
 
     if (!existingSubmission) {
-      res.status(404).json({ error: 'Submission not found' });
+      res.status(404).json({ error: "Submission not found" });
       return;
     }
 
@@ -266,9 +324,10 @@ export const updateSubmission = async (req: AuthRequest, res: Response): Promise
     });
 
     // If submission was approved, update participant stats
-    if (updateData.status === 'APPROVED' && updateData.points) {
-      const pointsDifference = updateData.points - (existingSubmission.points || 0);
-      
+    if (updateData.status === "APPROVED" && updateData.points) {
+      const pointsDifference =
+        updateData.points - (existingSubmission.points || 0);
+
       await prisma.participant.update({
         where: { id: existingSubmission.participantId },
         data: {
@@ -290,12 +349,15 @@ export const updateSubmission = async (req: AuthRequest, res: Response): Promise
 
       // Emit leaderboard update
       await emitLeaderboardUpdate();
-      
+
       // Emit user stats update
       await emitUserStatsUpdate(existingSubmission.participantId);
-    } else if (updateData.status === 'REJECTED') {
+    } else if (updateData.status === "REJECTED") {
       // If previously approved, subtract points
-      if (existingSubmission.status === 'APPROVED' && existingSubmission.points) {
+      if (
+        existingSubmission.status === "APPROVED" &&
+        existingSubmission.points
+      ) {
         await prisma.participant.update({
           where: { id: existingSubmission.participantId },
           data: {
@@ -318,7 +380,7 @@ export const updateSubmission = async (req: AuthRequest, res: Response): Promise
 
       // Emit leaderboard update
       await emitLeaderboardUpdate();
-      
+
       // Emit user stats update
       await emitUserStatsUpdate(existingSubmission.participantId);
 
@@ -332,17 +394,17 @@ export const updateSubmission = async (req: AuthRequest, res: Response): Promise
     }
 
     res.status(200).json({
-      message: 'Submission updated successfully',
+      message: "Submission updated successfully",
       submission: updatedSubmission,
     });
   } catch (error) {
-    console.error('Update submission error:', error);
-    
-    if (error instanceof Error && error.name === 'ZodError') {
-      res.status(400).json({ error: 'Invalid input data' });
+    console.error("Update submission error:", error);
+
+    if (error instanceof Error && error.name === "ZodError") {
+      res.status(400).json({ error: "Invalid input data" });
       return;
     }
 
-    res.status(500).json({ error: 'Failed to update submission' });
+    res.status(500).json({ error: "Failed to update submission" });
   }
 };
