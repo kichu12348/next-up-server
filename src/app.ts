@@ -34,8 +34,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 300, // limit each IP to 100 requests per windowMs
+  windowMs: 30 * 1000, // 30 seconds
+  max: 1000, // limit each IP to 1000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -44,7 +44,7 @@ const limiter = rateLimit({
 });
 
 const strictLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 30 * 1000, // 15 minutes
   max: 300, // limit each IP to 300 requests per windowMs for sensitive endpoints
   standardHeaders: true,
   legacyHeaders: false,
