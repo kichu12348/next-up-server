@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import prisma from "../utils/db";
 import { generateOTP, isOTPExpired, generateToken } from "../utils/auth";
 import {
-  OTPRequestSchema,
   OTPVerifySchema,
   ParticipantOTPRequestSchema,
 } from "../utils/validation";
 import { sendParticipantOTPEmail } from "../services/emailService";
+import { ParticipantUpdateSchema } from "../utils/validation";
+import { ParticipantAuthRequest } from "../middleware/auth";
 
 // Map to store timeout IDs for OTP cleanup
 const otpTimeouts = new Map<string, NodeJS.Timeout>();
@@ -219,4 +220,35 @@ export const cleanupOTPTimeouts = (): void => {
     clearTimeout(timeoutId);
   });
   otpTimeouts.clear();
+};
+
+export const updateParticipantProfile = async (
+  req: ParticipantAuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.participant?.participantId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const data = ParticipantUpdateSchema.parse(req.body);
+
+    const updatedParticipant = await prisma.participant.update({
+      where: { id: req.participant.participantId },
+      data: data,
+    });
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      participant: updatedParticipant,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "ZodError") {
+      res.status(400).json({ error: "Invalid input data" });
+      return;
+    }
+    console.error("Update profile error:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
 };

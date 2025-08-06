@@ -46,6 +46,12 @@ export const SubmissionsQuerySchema = z.object({
   email: z.email().optional(),
 });
 
+export const ParticipantUpdateSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name too long').optional(),
+  college: z.string().min(1, 'College is required').max(200, 'College name too long').optional(),
+  gender: z.enum(['Male', 'Female']).optional(),
+});
+
 export type SubmissionCreateData = z.infer<typeof SubmissionCreateSchema>;
 export type SubmissionUpdateData = z.infer<typeof SubmissionUpdateSchema>;
 export type OTPRequestData = z.infer<typeof OTPRequestSchema>;

@@ -14,8 +14,6 @@ export const initializeSocket = (server: HTTPServer): SocketIOServer => {
 
   io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
-
-    // Join leaderboard room for real-time updates
     socket.join('leaderboard');
 
     socket.on('disconnect', () => {
@@ -31,6 +29,49 @@ export const getSocketIO = (): SocketIOServer => {
     throw new Error('Socket.IO not initialized');
   }
   return io;
+};
+
+export const emitCollegeLeaderboardUpdate = async (): Promise<void> => {
+    try {
+        if (!io) return;
+
+        const collegeStats = await prisma.participant.groupBy({
+          by: ['college'],
+          _sum: {
+            totalPoints: true,
+            taskCount: true,
+          },
+          _count: {
+            id: true,
+          },
+          where: {
+            college: {
+              not: null,
+            },
+            totalPoints: {
+              gt: 0,
+            }
+          },
+        });
+
+        const rankedColleges = collegeStats
+          .map(stat => ({
+            college: stat.college,
+            totalPoints: stat._sum.totalPoints || 0,
+            totalTasks: stat._sum.taskCount || 0,
+            participantCount: stat._count.id,
+          }))
+          .sort((a, b) => b.totalPoints - a.totalPoints)
+          .map((college, index) => ({
+            ...college,
+            rank: index + 1,
+          }));
+
+        io.emit('college-leaderboard:update', { leaderboard: rankedColleges });
+        console.log('College leaderboard update emitted to all clients');
+    } catch (error) {
+        console.error('Error emitting college leaderboard update:', error);
+    }
 };
 
 export const emitLeaderboardUpdate = async (): Promise<void> => {
@@ -102,6 +143,10 @@ export const emitLeaderboardUpdate = async (): Promise<void> => {
     // Emit to all clients in the leaderboard room
     io.to('leaderboard').emit('leaderboard:update', responseData);
     console.log('Leaderboard update emitted to all clients');
+
+    // Also emit college leaderboard update
+    await emitCollegeLeaderboardUpdate();
+
   } catch (error) {
     console.error('Error emitting leaderboard update:', error);
   }

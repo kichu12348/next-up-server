@@ -86,6 +86,52 @@ export const getLeaderboard = async (
   }
 };
 
+//get college leaderboard
+export const getCollegeLeaderboard = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const collegeStats = await prisma.participant.groupBy({
+      by: ['college'],
+      _sum: {
+        totalPoints: true,
+        taskCount: true,
+      },
+      _count: {
+        id: true,
+      },
+      where: {
+        college: {
+          not: null, 
+        },
+        totalPoints: {
+          gt: 0, 
+        }
+      },
+    });
+
+    const rankedColleges = collegeStats
+      .map(stat => ({
+        college: stat.college,
+        totalPoints: stat._sum.totalPoints || 0,
+        totalTasks: stat._sum.taskCount || 0,
+        participantCount: stat._count.id,
+      }))
+      .sort((a, b) => b.totalPoints - a.totalPoints) // Sort by points descending
+      .map((college, index) => ({
+        ...college,
+        rank: index + 1, // Add rank
+      }));
+
+    res.status(200).json({
+      leaderboard: rankedColleges,
+    });
+
+  } catch (error) {
+    console.error("Get college leaderboard error:", error);
+    res.status(500).json({ error: "Failed to fetch college leaderboard" });
+  }
+};
+
+
 export const exportLeaderboard = async (
   req: AuthRequest,
   res: Response
@@ -234,10 +280,8 @@ export const exportExcel = async (
       "Content-Disposition",
       'attachment; filename="participants.xlsx"'
     );
-
-    // ✅ Pipe workbook to response stream
     await workbook.xlsx.write(res);
-    res.end(); // Finalize stream
+    res.end(); 
   } catch (error) {
     console.error("Export Excel error:", error);
     res.status(500).json({ error: "Failed to export participants to Excel" });
