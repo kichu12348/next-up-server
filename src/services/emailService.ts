@@ -78,6 +78,7 @@ export const sendSubmissionApprovedEmail = async (
   points: number,
   note?: string
 ): Promise<void> => {
+  return;
   const subject = '✅ Your Task Has Been Approved!';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
