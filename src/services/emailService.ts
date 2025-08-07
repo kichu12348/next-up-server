@@ -102,6 +102,7 @@ export const sendSubmissionRejectedEmail = async (
   taskName: string,
   note?: string
 ): Promise<void> => {
+  return;
   const subject = '❌ Task Submission Update';
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
