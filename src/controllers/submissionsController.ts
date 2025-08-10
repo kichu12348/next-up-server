@@ -22,12 +22,13 @@ export const createSubmission = async (
   req: ParticipantAuthRequest,
   res: Response
 ): Promise<void> => {
-
   const date = new Date();
   // Create a date object in IST
-  const indianStandardTime = new Date(date.toLocaleString("en-US", {
-    timeZone: "Asia/Kolkata",
-  }));
+  const indianStandardTime = new Date(
+    date.toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata",
+    })
+  );
   if (indianStandardTime > submissionDeadline) {
     res.status(400).json({ error: "Submission deadline has passed" });
     return;
@@ -60,12 +61,9 @@ export const createSubmission = async (
     });
 
     if (existingSubmission && existingSubmission.status !== "REJECTED") {
-      res
-        .status(400)
-        .json({
-          error:
-            "A submission for this task already exists and is not rejected.",
-        });
+      res.status(400).json({
+        error: "A submission for this task already exists and is not rejected.",
+      });
       return;
     }
 
@@ -74,7 +72,7 @@ export const createSubmission = async (
         where: { id: existingSubmission.id },
         data: {
           fileUrl,
-          status: "PENDING", 
+          status: "PENDING",
           note: null,
           points: null,
         },
@@ -310,7 +308,6 @@ export const updateSubmission = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
-
   try {
     const { id } = req.params;
     const updateData = SubmissionUpdateSchema.parse(req.body);
@@ -422,3 +419,16 @@ export const updateSubmission = async (
     res.status(500).json({ error: "Failed to update submission" });
   }
 };
+
+const date = new Date();
+const indianStandardTime = date.toLocaleString("en-US", {
+  timeZone: "Asia/Kolkata",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+});
+
+console.log("Indian Standard Time:", indianStandardTime);
