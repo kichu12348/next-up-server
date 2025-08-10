@@ -16,10 +16,23 @@ import {
 } from "../sockets/socketHandlers";
 import { AuthRequest, ParticipantAuthRequest } from "../middleware/auth";
 
+const submissionDeadline = new Date("2025-08-11T00:00:00"); // August 11, 2025
+
 export const createSubmission = async (
   req: ParticipantAuthRequest,
   res: Response
 ): Promise<void> => {
+
+  const date = new Date();
+  // Create a date object in IST
+  const indianStandardTime = new Date(date.toLocaleString("en-US", {
+    timeZone: "Asia/Kolkata",
+  }));
+  if (indianStandardTime > submissionDeadline) {
+    res.status(400).json({ error: "Submission deadline has passed" });
+    return;
+  }
+
   try {
     const { taskType, taskName, fileUrl } = req.body;
 
@@ -297,6 +310,7 @@ export const updateSubmission = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
+
   try {
     const { id } = req.params;
     const updateData = SubmissionUpdateSchema.parse(req.body);
